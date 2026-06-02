@@ -1,4 +1,5 @@
 <?php
+include "functions.php";
 include 'include/db.php';
 // التحقق من وجود ID القسم
 if (!isset($_GET['id'])) { header("Location: index.php"); exit; }
@@ -35,15 +36,15 @@ if(isset($user_session)) {
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
-    <link rel="stylesheet" href="style.min.css?v=13.0">
+    <link rel="stylesheet" href="style.css?v=20.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 </head>
 <body>
 
-    <header>
+    <header class="glass">
         <a href="index.php" style="text-decoration:none;">
-            <div class="logo-container">
+            <div class="logo-container" style="margin: 0 auto;">
                 <span class="logo-text-sam">SAM</span>
                 <span class="logo-text-store">STORE</span>
             </div>

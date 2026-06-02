@@ -400,7 +400,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
     <title>لوحة التحكم</title>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="admin-manifest.json">
-    <link rel="stylesheet" href="style.min.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="style.css?v=20.0">
 </head>
 <body class="admin-body">
 
@@ -474,7 +474,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
         <!-- 5. الإعدادات العامة -->
 
         <!-- الصف الأول: بطاقات ملونة -->
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
             
             <!-- بطاقة الزوار -->
             <div class="panel" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-align: center;">
@@ -672,7 +672,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
         </div>
 
         <!-- الإحصائيات -->
-        <div class="stats-grid">
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
             <div class="stat-card">
                 <div class="stat-label">صافي الدخل</div>
                 <div class="stat-num"><?= number_format($reportData['total_revenue'] ?? 0) ?> ر.ي</div>
@@ -699,7 +699,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
         </table>
     </div>
     <!-- بطاقات الإحصائيات -->
-            <div class="stats-grid">
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
                 <div class="stat-card">
                     <div class="stat-label">إجمالي المبيعات</div>
                     <div class="stat-num"><?= number_format($reportData['total_revenue'] ?? 0) ?> ر.ي</div>

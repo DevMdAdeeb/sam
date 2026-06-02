@@ -1,4 +1,5 @@
 <?php
+include "functions.php";
 include 'include/db.php';
 // فحص وضع الصيانة
 if ($isMaintenance == 1) {
@@ -69,150 +70,44 @@ if(isset($user_session)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> متجر سام </title>
     <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
-    <link rel="stylesheet" href="style.min.css?v=19.0">
+    <link rel="stylesheet" href="style.css?v=20.0">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- ================= قسم العروض (مع الوصف والكمية) ================= -->
 <style>
-    .offers-section-final {
-        margin: 20px 0;
-        direction: ltr; 
-        position: relative;
-    }
-
-    .offers-container-final {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        gap: 15px;
-        padding: 20px 0;
-        scrollbar-width: none; 
-        padding-left: calc(50% - 140px); 
-        padding-right: calc(50% - 140px);
-    }
+    .offers-section-final { margin: 20px 0; direction: ltr; position: relative; }
+    .offers-container-final { display: flex; overflow-x: auto; gap: 15px; padding: 20px 15px; scrollbar-width: none; }
     .offers-container-final::-webkit-scrollbar { display: none; }
-
     .offer-card-final {
-        flex: 0 0 280px;
-        width: 280px;
-        height: 400px; /* زيادة الطول قليلاً لاستيعاب الوصف */
-        
-        background: #fff;
-        border: 2px solid #e0e0e0;
-        border-radius: 15px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        
-        scroll-snap-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: space-between;
-        padding: 15px;
-        box-sizing: border-box;
-        position: relative;
-        
-        opacity: 1;
-        filter: none;
-        transform: scale(1); 
-        transition: transform 0.3s ease;
+        flex: 0 0 280px; height: 380px; background: white; border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+        align-items: center; justify-content: space-between; padding: 20px;
+        position: relative; transition: 0.3s; border: 1px solid rgba(0,0,0,0.03);
     }
-
-    .offer-card-final:active { transform: scale(0.98); }
-
-    .offer-img-final {
-        width: 100%;
-        height: 150px;
-        object-fit: contain;
-        margin-bottom: 5px;
-    }
-
-    .offer-details-final {
-        width: 100%;
-        text-align: center;
-        direction: rtl; 
-    }
-
+    .offer-img-final { width: 100%; height: 160px; object-fit: contain; }
     .offer-badge-final {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #d00000;
-        color: #fff;
-        font-size: 0.85rem;
-        padding: 5px 12px;
-        border-radius: 5px;
-        font-weight: bold;
-        z-index: 5;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        position: absolute; top: 15px; right: 15px; background: #d00000;
+        color: #fff; font-size: 0.8rem; padding: 4px 12px; border-radius: 12px; font-weight: 900;
     }
-
-    .offer-title-final {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #1a2a3a;
-        margin: 5px 0;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    /* تنسيق الوصف الجديد */
-    .offer-desc-final {
-        font-size: 0.8rem;
-        color: #777;
-        margin: 0 0 8px 0;
-        line-height: 1.4;
-        height: 2.8em; /* ارتفاع لسطرين */
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-
-    /* تنسيق الكمية الجديد */
-    .offer-qty-final {
-        font-size: 0.75rem;
-        color: #28a745; /* أخضر */
-        background: #e8f5e9;
-        padding: 3px 10px;
-        border-radius: 10px;
-        display: inline-block;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-
+    .offer-title-final { font-size: 1.1rem; font-weight: 900; color: #1a2a3a; margin: 10px 0; }
+    .offer-desc-final { font-size: 0.8rem; color: #777; height: 2.8em; overflow: hidden; }
     .btn-offer-final {
-        background: #1a2a3a;
-        color: #fff;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        width: 100%;
-        font-weight: bold;
-        cursor: pointer;
-        font-family:'Cairo',sans-serif
-        font-size: 1rem;
-        margin-top: 5px;
+        background: #1a2a3a; color: #fff; border: none; padding: 12px;
+        border-radius: 12px; width: 100%; font-weight: 900; cursor: pointer;
     }
 </style>
 </head>
 <body>
 
-    <header>
-        <!-- رابط الشعار يعود للصفحة الرئيسية -->
+    <header class="glass">
         <a href="index.php" class="logo-container">
-            <!-- الكلمة الثانية (الذهبية/الرفيعة) -->
             <span class="logo-text-store"><?= $siteName2 ?></span>
-            
-            <!-- الكلمة الأولى (الكحلية/العريضة) -->
             <span class="logo-text-sam"><?= $siteName1 ?></span>
         </a>
-        <!-- <img src="sam.png" alt="شعار" style="max-height:50px;"> -->
-        <!-- <h1>متجر سام</h1> -->
-          <form action="search.php" method="GET" class="search-container">
+        <form action="search.php" method="GET" class="search-container">
             <input type="text" name="q" class="search-input" placeholder="ابحث عن منتج..." required>
-            <button type="submit" class="search-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-</svg></button>
+            <button type="submit" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
         </form>
     </header>
 
@@ -226,14 +121,14 @@ $offerSql = "SELECT p.*, (SELECT COALESCE(SUM(qty), 0) FROM cart WHERE product_i
 $offerStmt = $pdo->query($offerSql);
 $offers = $offerStmt->fetchAll(PDO::FETCH_ASSOC);
 
-if (count($offers) > 0): 
+if (count($offers) > 0):
 ?>
 <div class="offers-section-final">
     <div class="offers-container-final" id="finalSlider">
-        <?php foreach($offers as $off): 
+        <?php foreach($offers as $off):
             $percent = 0;
             if($off['price'] > 0) $percent = round((($off['price'] - $off['discount_price']) / $off['price']) * 100);
-            
+
             if ($off['quantity'] !== null) {
                 $realQty = $off['quantity'] - $off['total_reserved'];
                 if ($realQty <= 0) continue;
@@ -242,13 +137,13 @@ if (count($offers) > 0):
         <div class="offer-card-final">
             <span class="offer-badge-final"> % <?= $percent ?> خصم </span>
             <img src="uploads/<?= $off['image'] ?>" class="offer-img-final" alt="<?= $off['name'] ?>">
-            
+
             <div class="offer-details-final">
                 <h3 class="offer-title-final"><?= $off['name'] ?></h3>
-                
+
                 <!-- إضافة الوصف هنا -->
                 <p class="offer-desc-final"><?= htmlspecialchars($off['description'] ?? '') ?></p>
-                
+
                 <div style="margin-bottom: 5px;">
                     <span style="text-decoration:line-through; color:#999; font-size:0.9rem;"><?= $off['price'] ?></span>
                     <span style="color:#d00000; font-weight:900; font-size:1.3rem; margin-right:5px;"><?= $off['discount_price'] ?> ر.ي</span>
@@ -276,12 +171,12 @@ if (count($offers) > 0):
     // سكربت التحريك البسيط (بدون حسابات معقدة)
     document.addEventListener("DOMContentLoaded", function() {
         const slider = document.getElementById('finalSlider');
-        
+
         if(slider) {
             setInterval(() => {
                 // عرض البطاقة + الفراغ (280 + 15)
-                const scrollAmount = 295; 
-                
+                const scrollAmount = 295;
+
                 // إذا وصلنا للنهاية نعود للبداية
                 if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 50) {
                     slider.scrollTo({ left: 0, behavior: 'smooth' });
@@ -300,7 +195,7 @@ if (count($offers) > 0):
         <!-- ================= قسم أحدث المنتجات ================= -->
         <?php
         ob_start();
-        $sqlLatest = "SELECT p.*, 
+        $sqlLatest = "SELECT p.*,
                       (SELECT COALESCE(SUM(qty), 0) FROM cart WHERE product_id = p.id) as total_reserved
                       FROM products p
                       INNER JOIN (
@@ -309,7 +204,7 @@ if (count($offers) > 0):
                           WHERE (quantity > 0 OR quantity IS NULL)
                           GROUP BY category_id
                       ) as latest_per_cat ON p.id = latest_per_cat.max_id
-                      ORDER BY p.created_at DESC 
+                      ORDER BY p.created_at DESC
                       LIMIT 10";
         $stmt = $pdo->query($sqlLatest);
         $hasLatest = false;
@@ -363,7 +258,7 @@ if (count($offers) > 0):
                 <h3>أحدث المنتجات</h3>
                 <button onclick="window.location.href='latest.php'">عرض الكل</button>
             </div>
-            <div class="products-row">
+            <div class="products-row container">
                 <?= $latestHTML ?>
             </div>
         <?php endif; ?>
@@ -434,7 +329,7 @@ if (count($offers) > 0):
                     <h3><?= htmlspecialchars($cat['name']) ?></h3>
                     <button onclick="window.location.href='category.php?id=<?= $cat['id'] ?>'">عرض الكل</button>
                 </div>
-                <div class="products-row">
+                <div class="products-row container">
                     <?= $catHTML ?>
                 </div>
             <?php
@@ -634,7 +529,7 @@ if (count($offers) > 0):
     </div>
 <script>
     // 🔴 تأكد أنك وضعت المفتاح هنا، وإلا سيتوقف الكود
-    const publicKey = 'BAvM16qSKZq8JWSLwK5EFBixHA-d4uvzePvNzldMCNGf4OR3iXQ-kvWhNWqGlpTrNptDQ2PvSM0wigI7h8dfatc'; 
+    const publicKey = 'BAvM16qSKZq8JWSLwK5EFBixHA-d4uvzePvNzldMCNGf4OR3iXQ-kvWhNWqGlpTrNptDQ2PvSM0wigI7h8dfatc';
   function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -648,10 +543,10 @@ if (count($offers) > 0):
     document.addEventListener("DOMContentLoaded", function() {
         // التحقق: هل المتصفح يدعم؟ وهل الحالة "افتراضية" (لم يتم الرد سابقاً)؟
         if ('serviceWorker' in navigator && Notification.permission === 'default') {
-            
+
             // التحقق من الذاكرة المحلية: هل ضغط المستخدم "ليس الآن" من قبل؟
             const hasSeenPrompt = localStorage.getItem('push_prompt_seen');
-            
+
             if (!hasSeenPrompt) {
                 // إظهار النافذة بعد 3 ثواني لإعطاء الزبون فرصة لرؤية الموقع أولاً
                 setTimeout(() => {
@@ -671,7 +566,7 @@ if (count($offers) > 0):
     // عند الضغط على "نعم، فعلها"
     async function acceptPush() {
         document.getElementById('push-permission-modal').style.display = 'none';
-        
+
         try {
             const register = await navigator.serviceWorker.register('sw.js');
             const registration = await navigator.serviceWorker.ready;
@@ -691,11 +586,11 @@ if (count($offers) > 0):
             fd.append('endpoint', subscription.endpoint);
             fd.append('p256dh', p256dh);
             fd.append('auth', auth);
-            
+
             await fetch('api.php', { method: 'POST', body: fd });
-            
+
             alert("تم التفعيل بنجاح! شكراً لك.");
-            
+
         } catch (error) {
             console.error("لم يتم التفعيل:", error);
             // إذا رفض الإذن الرسمي، لا تظهر النافذة مرة أخرى
@@ -703,19 +598,19 @@ if (count($offers) > 0):
         }
     }
 </script>
-      
+
 <!-- نافذة طلب الإذن بالإشعارات -->
 <div id="push-permission-modal" class="modal" style="display:none; z-index: 10001;">
     <div class="modal-content" style="text-align: center; max-width: 350px; padding: 30px;">
         <div style="background: #f0f8ff; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
             <i class="fa-solid fa-bell" style="font-size: 2rem; color: #007bff;"></i>
         </div>
-        
+
         <h3 style="margin-bottom: 10px; color: #1a2a3a;">تفعيل التنبيهات؟</h3>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
             هل تود أن نرسل لك إشعاراً فور وصول منتجات جديدة أو عروض حصرية؟
         </p>
-        
+
         <div style="display: flex; gap: 10px;">
             <button onclick="acceptPush()" class="btn-add" style="background: #1a2a3a; flex: 1;">نعم، فعلها</button>
             <button onclick="dismissPush()" class="btn-add" style="background: #eee; color: #333; flex: 1;">ليس الآن</button>
@@ -724,6 +619,6 @@ if (count($offers) > 0):
 </div>
     <script>const sitePhone = "<?= $sitePhone ?>";</script>
     <script src="script.js"></script>
-      
+
 </body>
 </html>

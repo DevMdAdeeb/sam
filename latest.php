@@ -1,4 +1,5 @@
 <?php
+include "functions.php";
 include 'include/db.php';
 // جلب المفضلات
 $favMap = [];
@@ -16,14 +17,14 @@ if(isset($user_session)) {
     <title>أحدث المنتجات</title>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.min.css?v=13.0">
+    <link rel="stylesheet" href="style.css?v=20.0">
     <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-    <header>
-        <a href="index.php" class="logo-container" style="text-decoration:none;">
+    <header class="glass">
+        <a href="index.php" class="logo-container" style="margin: 0 auto;" style="text-decoration:none;">
             <span class="logo-text-sam">SAM</span>
             <span class="logo-text-store">STORE</span>
         </a>
@@ -127,7 +128,7 @@ if(isset($user_session)) {
     <!-- الفاتورة -->
     <div id="invoice-area" style="display:none; background:#fff; padding:20px; border:1px solid #333; width:500px; font-family:'Almarai', sans-serif;">
         <div style="text-align:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;">
-            <a href="index.php" class="logo-container">
+            <a href="index.php" class="logo-container" style="margin: 0 auto;">
             <span class="logo-text-store">STORE</span>
             <span class="logo-text-sam">SAM</span>
         </a>
