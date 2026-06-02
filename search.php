@@ -1,4 +1,5 @@
 <?php
+include "functions.php";
 include 'include/db.php';
 $query = $_GET['q'] ?? '';
 
@@ -17,12 +18,12 @@ if(isset($user_session)) {
     <title>بحث: <?= htmlspecialchars($query) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.min.css?v=13.0">
+    <link rel="stylesheet" href="style.css?v=20.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <header>
-        <a href="index.php" class="logo-container" style="text-decoration:none;">
+    <header class="glass">
+        <a href="index.php" class="logo-container" style="margin: 0 auto;" style="text-decoration:none;">
             <span class="logo-text-sam">SAM</span>
             <span class="logo-text-store">STORE</span>
         </a>
@@ -157,6 +158,7 @@ if(isset($user_session)) {
         <a href="favorites.php" class="nav-item"><i class="fa-regular fa-heart"></i><span>المفضلة</span></a>
         <div class="nav-item" onclick="toggleCatMenu()"><i class="fa-solid fa-bars"></i><span>الأقسام</span></div>
     </nav>
-<script src="script.js"></script>
+<script>const sitePhone = "<?= $sitePhone ?>";</script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 <?php
+include "functions.php";
 include 'include/db.php';
 // جلب المفضلات مع تفاصيل المنتج والمخزون
 $sql = "SELECT p.*, f.id as fav_id,
@@ -18,7 +19,7 @@ $stmt->execute([$user_session]);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مفضلاتي - متجر سام</title>
     <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
@@ -94,6 +95,7 @@ $stmt->execute([$user_session]);
 
         // ... (ضع هنا دوال الإضافة للسلة كما في الصفحات الأخرى) ...
     </script>
+    <script>const sitePhone = "<?= $sitePhone ?>";</script>
     <script src="script.js"></script>
 </body>
 </html>

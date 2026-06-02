@@ -115,7 +115,7 @@ if ($action == 'checkout') {
     try {
         // 1. جلب المنتجات (أضفنا p.category_id للاستعلام)
         $total = 0;
-        $stmt = $pdo->prepare("SELECT c.product_id, c.qty, c.size, p.name, p.price, p.discount_price, p.category_id 
+        $stmt = $pdo->prepare("SELECT c.product_id, c.qty, c.size, p.name, p.price, p.discount_price, p.category_id, p.cost_price
                                FROM cart c JOIN products p ON c.product_id = p.id 
                                WHERE c.session_id = ?");
         $stmt->execute([$user_session]);
@@ -139,13 +139,14 @@ if ($action == 'checkout') {
             $finalPrice = $item['discount_price'] ? $item['discount_price'] : $item['price'];
             
             // التعديل: إضافة product_id في الاستعلام والتنفيذ
-$itemSql = "INSERT INTO order_items (order_id, product_id, product_name, price, qty, size) VALUES (?, ?, ?, ?, ?,?)";
+$itemSql = "INSERT INTO order_items (order_id, product_id, product_name, price, cost_price, qty, size) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 $pdo->prepare($itemSql)->execute([
     $orderId,
     $item['product_id'], // <--- هذا هو الرقم الذي تريده
     $item['name'], 
-    $finalPrice, 
+    $finalPrice,
+    $item['cost_price'] ?? 0,
     $item['qty'], 
     $item['size'] ?? null,
 ]);
