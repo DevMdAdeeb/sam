@@ -35,7 +35,7 @@
         if (isset($_GET['code'])) {
             $code = $_GET['code'];
             // البحث باستخدام العمود الجديد invoice_code
-            $stmt = $pdo->prepare("SELECT * FROM orders WHERE invoice_code = ?");
+            $stmt = $pdo->prepare("SELECT o.*, SUM(CASE WHEN oi.item_status = 'valid' THEN oi.price * oi.qty ELSE 0 END) as calculated_total FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.invoice_code = ? GROUP BY o.id");
             $stmt->execute([$code]);
             $order = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -58,7 +58,7 @@
                     <hr class="track-divider">
                     <p><strong>العميل:</strong> <?= htmlspecialchars($order['customer_name']) ?></p>
                     <p><strong>تاريخ الطلب:</strong> <?= date('Y-m-d', strtotime($order['created_at'])) ?></p>
-                    <p><strong>الإجمالي:</strong> <?= htmlspecialchars($order['total_amount']) ?> ر.ي</p>
+                    <p><strong>الإجمالي:</strong> <?= htmlspecialchars($order['calculated_total']) ?> ر.ي</p>
                 </div>
 
                 <?php

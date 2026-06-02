@@ -179,6 +179,7 @@ if(isset($user_session)) {
         <a href="favorites.php" class="nav-item"><i class="fa-regular fa-heart"></i><span>المفضلة</span></a>
         <div class="nav-item" onclick="toggleCatMenu()"><i class="fa-solid fa-bars"></i><span>الأقسام</span></div>
     </nav>
-<script src="script.js"></script>
+<script>const sitePhone = "<?= $sitePhone ?>";</script>
+    <script src="script.js"></script>
 </body>
 </html>

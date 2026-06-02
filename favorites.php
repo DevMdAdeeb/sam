@@ -94,6 +94,7 @@ $stmt->execute([$user_session]);
 
         // ... (ضع هنا دوال الإضافة للسلة كما في الصفحات الأخرى) ...
     </script>
+    <script>const sitePhone = "<?= $sitePhone ?>";</script>
     <script src="script.js"></script>
 </body>
 </html>

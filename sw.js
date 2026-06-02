@@ -3,7 +3,7 @@ const urlsToCache = [
   './',                // الصفحة الرئيسية
   'index.php',
   'style.css',
-  'icons/con-512x512.png' 
+  'icons/icon-512x512.png'
   // ملاحظة: حذفت offline.html و s.png لأنك إذا لم تكن تملكهم سيتوقف الملف عن العمل
   // إذا كنت تملكهم فعلاً، أعد إضافتهم للقائمة
 ];
@@ -75,8 +75,8 @@ self.addEventListener('push', function(event) {
     
     const options = {
         body: data.body || 'تفقد المنتجات الجديدة',
-        icon: 'icons/con-512x512.png',  // تأكد أن الصورة موجودة بجانب الملف
-        badge: 'icons/con-512x512.png', // أيقونة صغيرة للشريط العلوي
+        icon: 'icons/icon-512x512.png',  // تأكد أن الصورة موجودة بجانب الملف
+        badge: 'icons/icon-512x512.png', // أيقونة صغيرة للشريط العلوي
         data: { 
             url: data.url || self.registration.scope // الرابط الافتراضي هو الصفحة الرئيسية
         },

@@ -722,6 +722,7 @@ if (count($offers) > 0):
         </div>
     </div>
 </div>
+    <script>const sitePhone = "<?= $sitePhone ?>";</script>
     <script src="script.js"></script>
       
 </body>

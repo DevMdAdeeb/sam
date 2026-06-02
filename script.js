@@ -275,7 +275,7 @@ function checkout() {
 
     // رقم هاتفك للواتساب
     // جلب الرقم من قاعدة البيانات
-    const myPhoneNumber = "<?= $sitePhone ?>";
+    const myPhoneNumber = typeof sitePhone !== "undefined" ? sitePhone : "";
     fetch('api.php', {method:'POST', body:fd})
     .then(r=>r.json())
     .then(d=>{

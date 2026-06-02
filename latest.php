@@ -158,6 +158,7 @@ if(isset($user_session)) {
         <div class="nav-item" onclick="toggleCatMenu()"><i class="fa-solid fa-bars"></i><span>الأقسام</span></div>
     </nav>
 
+    <script>const sitePhone = "<?= $sitePhone ?>";</script>
     <script src="script.js"></script>
 </body>
 </html>

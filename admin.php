@@ -13,7 +13,7 @@ if (isset($_POST['return_item'])) {
         // تحويل الحالة لمرتجع
         $pdo->prepare("UPDATE order_items SET item_status = 'returned' WHERE id = ?")->execute([$itemId]);
         // إعادة الكمية للمخزون
-        $pdo->prepare("UPDATE products SET quantity = quantity + ? WHERE name = ? AND quantity IS NOT NULL")->execute([$item['qty'], $item['product_name']]);
+        $pdo->prepare("UPDATE products SET quantity = quantity + ? WHERE id = ? AND quantity IS NOT NULL")->execute([$item['qty'], $item['product_id']]);
         
         echo "<script>alert('تم إرجاع المنتج للمخزون واستبعاده من الحسابات');</script>";
     }
@@ -35,7 +35,7 @@ $reportSql = "SELECT
                 
                 -- حساب صافي الربح: (سعر البيع - سعر التكلفة) * الكمية
                 -- نستخدم COALESCE لجعل التكلفة 0 إذا لم تكن مدخلة
-                SUM((oi.price - COALESCE(p.cost_price, 0)) * oi.qty) as total_profit
+                SUM((oi.price - COALESCE(oi.cost_price, p.cost_price, 0)) * oi.qty) as total_profit
                 
               FROM orders o
               JOIN order_items oi ON o.id = oi.order_id
@@ -64,7 +64,7 @@ $topProducts = $topStmt->fetchAll(PDO::FETCH_ASSOC);
 $manageOrder = null;
 if (isset($_GET['manage_order'])) {
     $mOid = $_GET['manage_order'];
-    $moStmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?"); $moStmt->execute([$mOid]);
+    $moStmt = $pdo->prepare("SELECT o.*, SUM(CASE WHEN oi.item_status = 'valid' THEN oi.price * oi.qty ELSE 0 END) as calculated_total FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.id = ? GROUP BY o.id"); $moStmt->execute([$mOid]);
     $manageOrder = $moStmt->fetch(PDO::FETCH_ASSOC);
     if($manageOrder) {
         $moiStmt = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?"); $moiStmt->execute([$mOid]);
@@ -104,7 +104,7 @@ if (!isset($_SESSION['admin_id'])) {
             header("Location: admin.php"); exit;
         } else { $error = "بيانات خاطئة"; }
     }
-    echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>دخول</title><link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:"Almarai",sans-serif;background:#f4f4f4;height:100vh;display:flex;justify-content:center;align-items:center}form{background:#fff;padding:30px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);width:90%;max-width:400px;text-align:center}input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:5px;box-sizing:border-box}button{width:100%;padding:12px;background:#007bff;color:#fff;border:none;border-radius:5px;font-weight:bold}</style></head><body><form method="POST"><h2>دخول المشرف</h2><input type="email" name="email" placeholder="البريد" required><input type="password" name="password" placeholder="كلمة المرور" required><button name="login">دخول</button><p style="color:red">'.($error??'').'</p></form></body></html>';
+    echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>دخول</title><link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:"Almarai",sans-serif;background:#f4f4f4;height:100vh;display:flex;justify-content:center;align-items:center}form{background:#fff;padding:30px;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.1);width:90%;max-width:400px;text-align:center}input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:5px;box-sizing:border-box}button{width:100%;padding:12px;background:#007bff;color:#fff;border:none;border-radius:5px;font-weight:bold}</style></head><body><form method="POST"><h2>دخول المشرف</h2><input type="email" name="email" placeholder="البريد" required><input type="password" name="password" placeholder="كلمة المرور" required><button name="login">دخول</button><p style=\'color:red\'>'.($error??'').'</p></form></body></html>';
     exit;
 }
 // =====================: بث اشعارات  :========================
@@ -184,7 +184,35 @@ if (isset($_POST['delete_all_orders'])) {
     header("Location: admin.php?tab=tab-orders&t=".time()); exit;
 }
 if (isset($_POST['update_order_status'])) {
-    $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?")->execute([$_POST['status'], $_POST['order_id']]);
+    $newStatus = $_POST['status'];
+    $orderId = $_POST['order_id'];
+
+    // Get current status
+    $stmt = $pdo->prepare("SELECT status FROM orders WHERE id = ?");
+    $stmt->execute([$orderId]);
+    $oldStatus = $stmt->fetchColumn();
+
+    $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?")->execute([$newStatus, $orderId]);
+
+    // If transitioning TO canceled from anything else, return stock
+    if ($newStatus == 'canceled' && $oldStatus != 'canceled') {
+        $stmt = $pdo->prepare("SELECT product_id, qty FROM order_items WHERE order_id = ? AND item_status = 'valid'");
+        $stmt->execute([$orderId]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($items as $item) {
+            $pdo->prepare("UPDATE products SET quantity = quantity + ? WHERE id = ? AND quantity IS NOT NULL")->execute([$item['qty'], $item['product_id']]);
+        }
+    }
+    // If transitioning FROM canceled to anything else, deduct stock
+    elseif ($oldStatus == 'canceled' && $newStatus != 'canceled') {
+        $stmt = $pdo->prepare("SELECT product_id, qty FROM order_items WHERE order_id = ? AND item_status = 'valid'");
+        $stmt->execute([$orderId]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($items as $item) {
+            $pdo->prepare("UPDATE products SET quantity = GREATEST(0, quantity - ?) WHERE id = ? AND quantity IS NOT NULL")->execute([$item['qty'], $item['product_id']]);
+        }
+    }
+
     header("Location: admin.php?tab=tab-orders&t=".time()); exit;
 }
 if (isset($_POST['add_category'])) { $pdo->prepare("INSERT INTO categories (name) VALUES (?)")->execute([$_POST['cat_name']]); header("Location: admin.php?tab=tab-cats&t=".time()); exit; }
@@ -319,7 +347,7 @@ if ($searchQuery) {
     $pS = $pdo->prepare("SELECT p.*, c.name as cat_name, (SELECT COALESCE(SUM(qty), 0) FROM cart WHERE product_id = p.id) as total_reserved FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.name LIKE ? OR p.admin_note LIKE ? OR p.supplier LIKE ?");
     $pS->execute([$term, $term, $term]); $searchProds = $pS->fetchAll(PDO::FETCH_ASSOC);
     $cS = $pdo->prepare("SELECT * FROM categories WHERE name LIKE ?"); $cS->execute([$term]); $searchCats = $cS->fetchAll(PDO::FETCH_ASSOC);
-    $oS = $pdo->prepare("SELECT o.*, GROUP_CONCAT(CONCAT('<b>[#', oi.product_id, ']</b> ',oi.product_name, IF(oi.size IS NOT NULL AND oi.size != '', CONCAT(' <span style=\'color:#d00000; font-weight:bold;\'>[', oi.size, ']</span>'), ''), ' <span style=\'color:#666; font-size:0.85em;\'>(x', oi.qty, ')</span>') SEPARATOR '<br>') as items_summary FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.customer_name LIKE ? OR o.invoice_code LIKE ? GROUP BY o.id ORDER BY o.created_at DESC");
+    $oS = $pdo->prepare("SELECT o.*, SUM(CASE WHEN oi.item_status = 'valid' THEN oi.price * oi.qty ELSE 0 END) as calculated_total, GROUP_CONCAT(CONCAT(IF(oi.item_status = 'returned', '<del style=\'color:red\'>', ''), '<b>[#', oi.product_id, ']</b> ', oi.product_name, IF(oi.size IS NOT NULL AND oi.size != '', CONCAT(' <span style=\'color:#d00000; font-weight:bold;\'>[', oi.size, ']</span>'), ''), ' <span style=\'color:#666; font-size:0.85em;\'>(x', oi.qty, ')</span>', IF(oi.item_status = 'returned', '</del>', '')) SEPARATOR '<br>') as items_summary FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.customer_name LIKE ? OR o.invoice_code LIKE ? GROUP BY o.id ORDER BY o.created_at DESC");
     $oS->execute([$term, $term]); $searchOrds = $oS->fetchAll(PDO::FETCH_ASSOC);
 } else {
     // --- Products Pagination ---
@@ -336,7 +364,7 @@ if ($searchQuery) {
     $ordOffset = ($ordPage - 1) * $ordsPerPage;
     $totalOrds = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
     $totalOrdPages = ceil($totalOrds / $ordsPerPage);
-    $ordQ = "SELECT o.*, GROUP_CONCAT(CONCAT('<b>[#', oi.product_id, ']</b> ',oi.product_name, IF(oi.size IS NOT NULL AND oi.size != '', CONCAT(' <span style=\'color:#d00000; font-weight:bold;\'>[', oi.size, ']</span>'), ''), ' <span style=\'color:#666; font-size:0.85em;\'>(x', oi.qty, ')</span>') SEPARATOR '<br>') as items_summary FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id GROUP BY o.id ORDER BY o.created_at DESC LIMIT $ordsPerPage OFFSET $ordOffset";
+    $ordQ = "SELECT o.*, SUM(CASE WHEN oi.item_status = 'valid' THEN oi.price * oi.qty ELSE 0 END) as calculated_total, GROUP_CONCAT(CONCAT(IF(oi.item_status = 'returned', '<del style=\'color:red\'>', ''), '<b>[#', oi.product_id, ']</b> ', oi.product_name, IF(oi.size IS NOT NULL AND oi.size != '', CONCAT(' <span style=\'color:#d00000; font-weight:bold;\'>[', oi.size, ']</span>'), ''), ' <span style=\'color:#666; font-size:0.85em;\'>(x', oi.qty, ')</span>', IF(oi.item_status = 'returned', '</del>', '')) SEPARATOR '<br>') as items_summary FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id GROUP BY o.id ORDER BY o.created_at DESC LIMIT $ordsPerPage OFFSET $ordOffset";
     $orders = $pdo->query($ordQ)->fetchAll(PDO::FETCH_ASSOC);
 }
 // === 5. إحصائيات لوحة القيادة (Dashboard Stats) ===
@@ -349,7 +377,8 @@ $usersCount = $pdo->query("SELECT COUNT(*) FROM users WHERE last_active >= DATE_
 $totalOrdersCount = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
 
 // 3. إجمالي المبيعات (نحسب فقط الطلبات غير الملغية)
-$totalRevenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status != 'canceled'")->fetchColumn();
+$totalRevenue = $pdo->query("SELECT SUM(oi.price * oi.qty) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status IN ('processing', 'shipping', 'delivered') AND oi.item_status = 'valid'")->fetchColumn();
+$totalProfit = $pdo->query("SELECT SUM((oi.price - COALESCE(oi.cost_price, p.cost_price, 0)) * oi.qty) FROM order_items oi JOIN orders o ON oi.order_id = o.id LEFT JOIN products p ON oi.product_id = p.id WHERE o.status IN ('processing', 'shipping', 'delivered') AND oi.item_status = 'valid'")->fetchColumn();
 
 // 4. منتجات أوشكت على النفاد (أقل من 5 قطع)
 $lowStockCount = $pdo->query("SELECT COUNT(*) FROM products WHERE quantity <= 5 AND quantity IS NOT NULL")->fetchColumn();
@@ -467,6 +496,12 @@ $stDelivered = $statusStats['delivered'] ?? 0;
                 <p style="font-size:2rem; font-weight:bold; margin:10px 0;"><?= number_format($totalRevenue) ?> <span style="font-size:1rem">ر.ي</span></p>
                 <small>إجمالي قيمة الطلبات</small>
             </div>
+            <!-- Profit Card -->
+            <div class="panel" style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; text-align: center;">
+                <h3 style="color:white; font-size:1rem;">ك صافي الأرباح</h3>
+                <p style="font-size:2rem; font-weight:bold; margin:10px 0;"><?= number_format($totalProfit) ?> <span style="font-size:1rem">ر.ي</span></p>
+                <small>إجمالي الربح المحقق</small>
+            </div>
 
             <!-- بطاقة التنبيهات -->
             <div class="panel" style="background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #d35400; text-align: center;">
@@ -520,9 +555,9 @@ $stDelivered = $statusStats['delivered'] ?? 0;
                             <?php $stArr=['new'=>['جديد','#333'],'processing'=>['تجهيز','#e67e22'],'shipping'=>['توصيل','#3498db'],'delivered'=>['تم','#27ae60'],'canceled'=>['ملغي','#c0392b']]; foreach($orders as $ord): $k=$ord['status']?:'new'; ?>
                             <tr>
                                 <td data-label="رقم">#<?= htmlspecialchars($ord['id']) ?><br><small><?= htmlspecialchars($ord['invoice_code']) ?></small></td>
-                                <td data-label="العميل"><b><?= htmlspecialchars($ord['customer_name']) ?></b><br><small><?= htmlspecialchars($ord['customer_phone']) ?></small><br><small><?= htmlspecialchars($ord['address']) ?></small><?php if($ord['notes']) echo "<br><small style='color:red'>📝" . htmlspecialchars($ord['notes']) . "</small>"; ?></td>
+                                <td data-label="العميل"><b><?= htmlspecialchars($ord['customer_name']) ?></b><br><small><?= htmlspecialchars($ord['customer_phone']) ?></small><br><small><?= htmlspecialchars($ord['address']) ?></small><?php if($ord['notes']) echo "<br><small style=\'color:red\'>📝" . htmlspecialchars($ord['notes']) . "</small>"; ?></td>
                                 <td data-label="المنتجات"><?= $ord['items_summary'] ?></td>
-                                <td data-label="الإجمالي" style="color:green;font-weight:bold;"><?= htmlspecialchars($ord['total_amount']) ?></td>
+                                <td data-label="الإجمالي" style="color:green;font-weight:bold;"><?= htmlspecialchars($ord['calculated_total']) ?></td>
                                 <td data-label="الحالة"><form method="POST"><input type="hidden" name="order_id" value="<?= $ord['id'] ?>"><select name="status" onchange="this.form.submit()" class="admin-select" style="background:<?= $stArr[$k][1] ?>;color:#fff;border:none;font-weight:bold;padding:5px;"><?php foreach($stArr as $x=>$y): ?><option value="<?= $x ?>" <?= $k==$x?'selected':'' ?> style="background:#fff;color:#000;"><?= $y[0] ?></option><?php endforeach; ?></select><input type="hidden" name="update_order_status" value="1"></form></td>
                                 <td data-label="التاريخ"><?= date('Y-m-d', strtotime($ord['created_at'])) ?></td>
                                 <td data-label="تحكم">
@@ -558,7 +593,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
                             <tr style="<?= $bg ?>">
                                 <td data-label="ID" style="font-weight:bold;">#<?= $prod['id'] ?></td>
                                 <td data-label="صورة"><img src="uploads/<?= htmlspecialchars($prod['image']) ?>" class="thumb"></td>
-                                <td data-label="المنتج"><b><?= htmlspecialchars($prod['name']) ?></b><?php if($prod['admin_note']) echo "<br><small style='color:red'>📝" . htmlspecialchars($prod['admin_note']) . "</small>"; ?></td>
+                                <td data-label="المنتج"><b><?= htmlspecialchars($prod['name']) ?></b><?php if($prod['admin_note']) echo "<br><small style=\'color:red\'>📝" . htmlspecialchars($prod['admin_note']) . "</small>"; ?></td>
                                 <td data-label="السعر"><?php if($prod['discount_price']): ?><s><?= htmlspecialchars($prod['price']) ?></s> <b style="color:#d00000"><?= htmlspecialchars($prod['discount_price']) ?></b><?php else: echo htmlspecialchars($prod['price']); endif; ?></td>
                                 <td data-label="المخزون"><?= $sTxt ?></td>
                                 <td data-label="القسم"><?= htmlspecialchars($prod['cat_name']) ?></td>
@@ -702,7 +737,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
                             FROM order_items oi 
                             JOIN orders o ON oi.order_id = o.id 
                             LEFT JOIN products p ON oi.product_id = p.id 
-                            WHERE o.status = 'new' 
+                            WHERE o.status = 'new' AND oi.item_status = 'valid'
                             GROUP BY p.supplier, oi.product_name, oi.size 
                             ORDER BY p.supplier ASC";
                             
@@ -796,6 +831,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
         <span class="close" onclick="window.location.href='admin.php?tab=orders'">&times;</span>
         <h3>إدارة الطلب #<?= $manageOrder['invoice_code'] ?></h3>
         <p><strong>العميل:</strong> <?= $manageOrder['customer_name'] ?></p>
+        <p><strong>إجمالي الطلب (الحالي):</strong> <span style="color:green; font-weight:bold;"><?= number_format($manageOrder['calculated_total']) ?> ر.ي</span></p>
         
         <table style="margin-top:15px;">
             <thead><tr><th>المنتج</th><th>السعر</th><th>الحالة</th><th>تحكم</th></tr></thead>
@@ -805,7 +841,7 @@ $stDelivered = $statusStats['delivered'] ?? 0;
                     <td data-label="المنتج"><?= $item['product_name'] ?> <small>(x<?= $item['qty'] ?>)</small></td>
                     <td data-label="السعر"><?= $item['price'] ?></td>
                     <td data-label="الحالة">
-                        <?= $item['item_status']=='returned' ? '<span style="color:red">مرتجع</span>' : '<span style="color:green">صالح</span>' ?>
+                        <?= $item['item_status']=='returned' ? '<span style=\'color:red\'>مرتجع</span>' : '<span style="color:green">صالح</span>' ?>
                     </td>
                     <td data-label="تحكم">
                         <?php if($item['item_status']=='valid'): ?>
